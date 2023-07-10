@@ -19,6 +19,7 @@ class _ContactFormState extends State<ContactForm> {
   final messageC = TextEditingController();
   final nameC = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  var toBlockButton = false;
 
   @override
   void initState() {
@@ -40,10 +41,8 @@ class _ContactFormState extends State<ContactForm> {
   Widget build(BuildContext context) {
     return BlocListener<ContactFormCubit, ContactFormState>(
       listener: (context, state) {
+        setState(() => toBlockButton = false);
         if (state.status == Status.failed) {
-          // emailC.clear();
-          // nameC.clear();
-          // messageC.clear();
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               duration: Duration(seconds: 8),
               content: Row(
@@ -55,9 +54,6 @@ class _ContactFormState extends State<ContactForm> {
               )));
         }
         if (state.status == Status.success) {
-          // emailC.clear();
-          // nameC.clear();
-          // messageC.clear();
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               duration: Duration(seconds: 8),
               content: Row(
@@ -67,6 +63,11 @@ class _ContactFormState extends State<ContactForm> {
                   Text("Message is successfully delivered!"),
                 ],
               )));
+        }
+        if (state.status == Status.loading) {
+          setState(() => toBlockButton = true);
+          toBlockButton = true;
+          return;
         }
       },
       child: Form(
@@ -80,15 +81,9 @@ class _ContactFormState extends State<ContactForm> {
               children: [
                 IconTextFormField(
                     textFormField: TextFormField(
-                  controller: nameC,
-                  decoration: const InputDecoration(labelText: "Name"),
-                  validator: (value) {
-                    if (value != null && value.isEmpty) {
-                      return "The field should not be empty";
-                    }
-                    return null;
-                  },
-                )),
+                        controller: nameC,
+                        decoration: const InputDecoration(labelText: "Name"),
+                        validator: _checkFieldIsNotEmpty)),
                 const SizedBox(height: 25),
                 IconTextFormField(
                   textFormField: TextFormField(
@@ -105,15 +100,9 @@ class _ContactFormState extends State<ContactForm> {
                 const SizedBox(height: 25),
                 IconTextFormField(
                   textFormField: TextFormField(
-                    controller: messageC,
-                    decoration: const InputDecoration(labelText: "Message"),
-                    validator: (value) {
-                      if (value != null && value.isEmpty) {
-                        return "The field should not be empty";
-                      }
-                      return null;
-                    },
-                  ),
+                      controller: messageC,
+                      decoration: const InputDecoration(labelText: "Message"),
+                      validator: _checkFieldIsNotEmpty),
                 ),
                 const SizedBox(height: 50),
                 ElevatedButton(
@@ -124,9 +113,8 @@ class _ContactFormState extends State<ContactForm> {
                       ),
                     ),
                     onPressed: (_formKey.currentState != null &&
-                            !_formKey.currentState!.validate()
-                        // || state.status == Status.loaded
-                        )
+                                !_formKey.currentState!.validate() ||
+                            toBlockButton)
                         ? null
                         : () => BlocProvider.of<ContactFormCubit>(context)
                             .sendContactForm(
@@ -156,5 +144,12 @@ class _ContactFormState extends State<ContactForm> {
             ),
           )),
     );
+  }
+
+  String? _checkFieldIsNotEmpty(String? value) {
+    if (value != null && value.isEmpty) {
+      return "The field should not be empty";
+    }
+    return null;
   }
 }
