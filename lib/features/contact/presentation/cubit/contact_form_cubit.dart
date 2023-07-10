@@ -19,9 +19,9 @@ class ContactFormCubit extends Cubit<ContactFormState> {
             ContactModel(name: name, email: email, message: message)));
     if (status == 201) {
       emit(state.copyWith(status: Status.success));
-      return;
+    } else {
+      emit(state.copyWith(status: Status.failed));
     }
-    emit(state.copyWith(status: Status.failed));
     emit(state.copyWith(status: Status.loaded));
   }
 }
