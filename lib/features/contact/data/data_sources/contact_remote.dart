@@ -9,8 +9,12 @@ class ContactRemote {
   ContactRemote(this.dio);
 
   Future<int?> sendContact(ContactModel contactModel) async {
-    final Response response = await dio.post("/test/contact/",
-        data: jsonEncode(contactModel.toJson()));
-    return response.statusCode;
+    try {
+      final Response response = await dio.post("/test/contact/",
+          data: jsonEncode(contactModel.toJson()));
+      return response.statusCode;
+    } on DioException catch (e){
+      return e.response?.statusCode;
+    }
   }
 }

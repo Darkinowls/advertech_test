@@ -1,7 +1,11 @@
+import 'package:advertecha_test/features/contact/presentation/cubit/contact_form_cubit.dart';
 import 'package:advertecha_test/features/contact/presentation/form/icon_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/status.dart';
 
 class ContactForm extends StatefulWidget {
   const ContactForm({Key? key}) : super(key: key);
@@ -34,57 +38,123 @@ class _ContactFormState extends State<ContactForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        key: _formKey,
-        child: Container(
-          padding: const EdgeInsets.all(50),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              IconTextFormField(
-                  textFormField: TextFormField(
-                controller: nameC,
-                decoration: const InputDecoration(labelText: "Name"),
-              )),
-              const SizedBox(height: 25),
-              IconTextFormField(
-                textFormField: TextFormField(
-                  controller: emailC,
-                  decoration: const InputDecoration(labelText: "Email"),
+    return BlocListener<ContactFormCubit, ContactFormState>(
+      listener: (context, state) {
+        if (state.status == Status.failed) {
+          // emailC.clear();
+          // nameC.clear();
+          // messageC.clear();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              duration: Duration(seconds: 8),
+              content: Row(
+                children: [
+                  Icon(Icons.error, color: Colors.red),
+                  SizedBox(width: 15),
+                  Text("There is an error in the form!"),
+                ],
+              )));
+        }
+        if (state.status == Status.success) {
+          // emailC.clear();
+          // nameC.clear();
+          // messageC.clear();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              duration: Duration(seconds: 8),
+              content: Row(
+                children: [
+                  Icon(Icons.gpp_good, color: Colors.green),
+                  SizedBox(width: 15),
+                  Text("Message is successfully delivered!"),
+                ],
+              )));
+        }
+      },
+      child: Form(
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          key: _formKey,
+          child: Container(
+            padding: const EdgeInsets.all(50),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                IconTextFormField(
+                    textFormField: TextFormField(
+                  controller: nameC,
+                  decoration: const InputDecoration(labelText: "Name"),
                   validator: (value) {
-                    if (value != null && !EmailValidator.validate(value)) {
-                      return "The email isn't valid";
+                    if (value != null && value.isEmpty) {
+                      return "The field should not be empty";
                     }
                     return null;
                   },
-                ),
-              ),
-              const SizedBox(height: 25),
-              IconTextFormField(
-                textFormField: TextFormField(
-                  controller: messageC,
-                  decoration: const InputDecoration(labelText: "Message"),
-                ),
-              ),
-              const SizedBox(height: 50),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  primary: Color.fromRGBO(152, 109, 142, 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50.0),
+                )),
+                const SizedBox(height: 25),
+                IconTextFormField(
+                  textFormField: TextFormField(
+                    controller: emailC,
+                    decoration: const InputDecoration(labelText: "Email"),
+                    validator: (value) {
+                      if (value != null && !EmailValidator.validate(value)) {
+                        return "The email isn't valid";
+                      }
+                      return null;
+                    },
                   ),
                 ),
-                onPressed: (nameC.text.isEmpty ||
-                        messageC.text.isEmpty ||
-                        !_formKey.currentState!.validate())
-                    ? null
-                    : () {},
-                child: const Text('Send'),
-              )
-            ],
-          ),
-        ));
+                const SizedBox(height: 25),
+                IconTextFormField(
+                  textFormField: TextFormField(
+                    controller: messageC,
+                    decoration: const InputDecoration(labelText: "Message"),
+                    validator: (value) {
+                      if (value != null && value.isEmpty) {
+                        return "The field should not be empty";
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 50),
+                ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      primary: const Color.fromRGBO(152, 109, 142, 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50.0),
+                      ),
+                    ),
+                    onPressed: (_formKey.currentState != null &&
+                            !_formKey.currentState!.validate()
+                        // || state.status == Status.loaded
+                        )
+                        ? null
+                        : () => BlocProvider.of<ContactFormCubit>(context)
+                            .sendContactForm(
+                                nameC.text, emailC.text, messageC.text),
+                    child: BlocBuilder<ContactFormCubit, ContactFormState>(
+                      builder: (context, state) {
+                        if (state.status == Status.loading) {
+                          return const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text("Please wait"),
+                              SizedBox(width: 15),
+                              SizedBox(
+                                  width: 15,
+                                  height: 15,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ))
+                            ],
+                          );
+                        }
+                        return const Text('Send');
+                      },
+                    )),
+              ],
+            ),
+          )),
+    );
   }
 }
