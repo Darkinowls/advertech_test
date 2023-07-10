@@ -20,7 +20,7 @@ class ContactScreen extends StatelessWidget {
         ),
         body: BlocProvider<ContactFormCubit>(
           create: (context) => ContactFormCubit(lc<ContactRemote>()),
-          child: const ContactForm(),
+          child: const SingleChildScrollView(child: ContactForm()),
         ));
   }
 }
