@@ -31,7 +31,7 @@ class ContactFormBloc extends Bloc<ContactFormEvent, ContactFormState> {
   Future<void> _onSendForm(_, Emitter<ContactFormState> emit) async {
     emit(state.copyWith(status: Status.loading));
     final int? status = await Future.delayed(
-        const Duration(seconds: 3),
+        (kDebugMode)? const Duration(seconds: 3) : const Duration(),
         () async => await _contactRemote.sendContact(ContactModel(
             name: state.name, email: state.email, message: state.message)));
     if (kDebugMode) {
