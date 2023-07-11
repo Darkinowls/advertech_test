@@ -1,10 +1,11 @@
 import 'package:advertecha_test/core/locator.dart';
 import 'package:advertecha_test/features/contact/data/data_sources/contact_remote.dart';
-import 'package:advertecha_test/features/contact/presentation/cubit/contact_form_cubit.dart';
 import 'package:advertecha_test/features/contact/presentation/form/contact_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../bloc/contact_form_bloc.dart';
 
 class ContactScreen extends StatelessWidget {
   const ContactScreen({Key? key}) : super(key: key);
@@ -18,8 +19,8 @@ class ContactScreen extends StatelessWidget {
           foregroundColor: Colors.black,
           title: const Center(child: Text("Contact us")),
         ),
-        body: BlocProvider<ContactFormCubit>(
-          create: (context) => ContactFormCubit(lc<ContactRemote>()),
+        body: BlocProvider<ContactFormBloc>(
+          create: (context) => ContactFormBloc(lc<ContactRemote>()),
           child: const SingleChildScrollView(child: ContactForm()),
         ));
   }

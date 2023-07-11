@@ -1,47 +1,18 @@
-import 'package:advertecha_test/features/contact/presentation/cubit/contact_form_cubit.dart';
+import 'package:advertecha_test/features/contact/presentation/bloc/contact_form_bloc.dart';
 import 'package:advertecha_test/features/contact/presentation/form/icon_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:email_validator/email_validator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/status.dart';
 
-class ContactForm extends StatefulWidget {
+class ContactForm extends StatelessWidget {
   const ContactForm({Key? key}) : super(key: key);
 
   @override
-  State<ContactForm> createState() => _ContactFormState();
-}
-
-class _ContactFormState extends State<ContactForm> {
-  final emailC = TextEditingController();
-  final messageC = TextEditingController();
-  final nameC = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  var toBlockButton = false;
-
-  @override
-  void initState() {
-    emailC.addListener(() => setState(() {}));
-    messageC.addListener(() => setState(() {}));
-    nameC.addListener(() => setState(() {}));
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    emailC.dispose();
-    nameC.dispose();
-    messageC.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocListener<ContactFormCubit, ContactFormState>(
+    return BlocListener<ContactFormBloc, ContactFormState>(
       listener: (context, state) {
-        setState(() => toBlockButton = false);
         if (state.status == Status.failed) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               duration: Duration(seconds: 8),
@@ -64,65 +35,75 @@ class _ContactFormState extends State<ContactForm> {
                 ],
               )));
         }
-        if (state.status == Status.loading) {
-          setState(() => toBlockButton = true);
-          toBlockButton = true;
-          return;
-        }
       },
-      child: Form(
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          key: _formKey,
-          child: Container(
-            padding: const EdgeInsets.all(50),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                IconTextFormField(
-                    textFormField: TextFormField(
-                        controller: nameC,
-                        decoration: const InputDecoration(labelText: "Name"),
-                        validator: _checkFieldIsNotEmpty)),
-                const SizedBox(height: 25),
-                IconTextFormField(
-                  textFormField: TextFormField(
-                    controller: emailC,
-                    decoration: const InputDecoration(labelText: "Email"),
-                    validator: (value) {
-                      if (value != null && !EmailValidator.validate(value)) {
-                        return "The email isn't valid";
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 25),
-                IconTextFormField(
-                  textFormField: TextFormField(
-                      controller: messageC,
-                      decoration: const InputDecoration(labelText: "Message"),
-                      validator: _checkFieldIsNotEmpty),
-                ),
-                const SizedBox(height: 50),
-                ElevatedButton(
+      child: Container(
+        padding: const EdgeInsets.all(50),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            IconTextFormField(
+                child: BlocSelector<ContactFormBloc, ContactFormState, String>(
+              selector: (state) => state.errorName,
+              builder: (context, errorStr) {
+                return TextFormField(
+                  onChanged: (value) =>
+                      BlocProvider.of<ContactFormBloc>(context)
+                          .add(NameChangedEvent(value)),
+                  decoration: InputDecoration(
+                      labelText: "Name",
+                      errorText: errorStr.isEmpty ? null : errorStr),
+                );
+              },
+            )),
+            const SizedBox(height: 25),
+            IconTextFormField(
+              child: BlocSelector<ContactFormBloc, ContactFormState, String>(
+                selector: (state) => state.errorEmail,
+                builder: (context, errorStr) {
+                  return TextFormField(
+                    onChanged: (value) =>
+                        BlocProvider.of<ContactFormBloc>(context)
+                            .add(EmailChangedEvent(value)),
+                    decoration: InputDecoration(
+                        labelText: "Email",
+                        errorText: errorStr.isEmpty ? null : errorStr),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 25),
+            IconTextFormField(
+              child: BlocSelector<ContactFormBloc, ContactFormState, String>(
+                selector: (state) => state.errorMessage,
+                builder: (context, errorStr) {
+                  return TextFormField(
+                      onChanged: (value) =>
+                          BlocProvider.of<ContactFormBloc>(context)
+                              .add(MessageChangedEvent(value)),
+                      decoration: InputDecoration(
+                          labelText: "Message",
+                          errorText: errorStr.isEmpty ? null : errorStr));
+                },
+              ),
+            ),
+            const SizedBox(height: 50),
+            BlocSelector<ContactFormBloc, ContactFormState, Status>(
+              selector: (state) => state.status,
+              builder: (context, status) {
+                return ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       primary: const Color.fromRGBO(152, 109, 142, 1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(50.0),
                       ),
                     ),
-                    onPressed: (_formKey.currentState != null &&
-                                !_formKey.currentState!.validate() ||
-                            toBlockButton)
+                    onPressed: (status != Status.ready)
                         ? null
-                        : () => BlocProvider.of<ContactFormCubit>(context)
-                            .sendContactForm(
-                                nameC.text, emailC.text, messageC.text),
-                    child: BlocBuilder<ContactFormCubit, ContactFormState>(
-                      builder: (context, state) {
-                        if (state.status == Status.loading) {
-                          return const Row(
+                        : () => BlocProvider.of<ContactFormBloc>(context)
+                            .add(const SendFormEvent()),
+                    child: (status == Status.loading)
+                        ? const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text("Please wait"),
@@ -135,21 +116,13 @@ class _ContactFormState extends State<ContactForm> {
                                     color: Colors.white,
                                   ))
                             ],
-                          );
-                        }
-                        return const Text('Send');
-                      },
-                    )),
-              ],
-            ),
-          )),
+                          )
+                        : const Text("Send"));
+              },
+            )
+          ],
+        ),
+      ),
     );
-  }
-
-  String? _checkFieldIsNotEmpty(String? value) {
-    if (value != null && value.isEmpty) {
-      return "The field should not be empty";
-    }
-    return null;
   }
 }

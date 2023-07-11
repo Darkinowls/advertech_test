@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class IconTextFormField extends StatelessWidget {
-  final TextFormField textFormField;
+  final Widget child;
 
-  const IconTextFormField({Key? key, required this.textFormField})
+  const IconTextFormField({Key? key, required this.child})
       : super(key: key);
 
   @override
@@ -21,7 +21,7 @@ class IconTextFormField extends StatelessWidget {
               color: Color.fromRGBO(229, 190, 144, 1)),
         ),
         const SizedBox(width: 15),
-        Expanded(child: textFormField),
+        Expanded(child: child),
       ],
     );
   }
